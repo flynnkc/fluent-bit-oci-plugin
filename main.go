@@ -2,19 +2,16 @@ package main
 
 import (
 	"C"
-	"unsafe"
-
+	"fmt"
 	"log"
 	"strconv"
+	"time"
+	"unsafe"
 
 	"github.com/fluent/fluent-bit-go/output"
 	ocilog "github.com/flynnkc/go-oci-log-writer"
-
+	"github.com/oracle/oci-go-sdk/v65/common"
 	"github.com/oracle/oci-go-sdk/v65/common/auth"
-)
-import (
-	"fmt"
-	"time"
 )
 
 var (
@@ -31,15 +28,30 @@ func FLBPluginRegister(def unsafe.Pointer) int {
 
 // FLBPluginInit is where we create instances stored in globals for setup
 func FLBPluginInit(plugin unsafe.Pointer) int {
-	p, err := auth.OkeWorkloadIdentityConfigurationProvider()
-	if err != nil {
-		log.Printf("unable to initialize workload identity provider: %s", err)
-		return output.FLB_ERROR
-	}
-
 	// Mandatory variables
 	logId := output.FLBPluginConfigKey(plugin, "log_id")
 	src := output.FLBPluginConfigKey(plugin, "log_source")
+	principal := output.FLBPluginConfigKey(plugin, "principal")
+
+	// Get provider defaulting to local config file with default profile
+	var p common.ConfigurationProvider
+	var err error
+	switch principal {
+	case "workload":
+		p, err = auth.OkeWorkloadIdentityConfigurationProvider()
+		if err != nil {
+			log.Printf("unable to initialize workload identity provider: %s", err)
+			return output.FLB_ERROR
+		}
+	case "instance":
+		p, err = auth.InstancePrincipalConfigurationProvider()
+		if err != nil {
+			log.Printf("unable to initialize instance identity provider: %s", err)
+			return output.FLB_ERROR
+		}
+	default:
+		p = common.DefaultConfigProvider()
+	}
 
 	d := ocilog.LogWriterDetails{
 		Provider: p,
@@ -86,7 +98,7 @@ func FLBPluginFlushCtx(ctx, data unsafe.Pointer, length C.int, tag *C.char) int 
 		case uint64:
 			timestamp = time.Unix(int64(t), 0)
 		default:
-			fmt.Println("time provided invalid, defaulting to now.")
+			log.Println("time provided invalid, defaulting to now.")
 			timestamp = time.Now()
 		}
 
