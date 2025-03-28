@@ -1,0 +1,17 @@
+service:
+  log_level: debug
+
+plugins:
+  - <PATH TO fb_oci.so>
+
+pipeline:
+  inputs:
+    - name: dummy
+
+  outputs:
+    - name: oci-logging
+      log_id: <OCI LOG OCID>
+      log_source: <LOG SOURCE NAME>
+      principal: <[none, instance, workload]>
+      subject: <LOG SUBJECT NAME>
+      buffer_size: <200>
