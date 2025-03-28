@@ -21,12 +21,13 @@ var (
 
 func main() {}
 
+//export FLBPluginRegister
 func FLBPluginRegister(def unsafe.Pointer) int {
 	return output.FLBPluginRegister(def, "oci-logging",
 		"Plugin for OCI Logging Service")
 }
 
-// FLBPluginInit is where we create instances stored in globals for setup
+//export FLBPluginInit
 func FLBPluginInit(plugin unsafe.Pointer) int {
 	// Mandatory variables
 	logId := output.FLBPluginConfigKey(plugin, "log_id")
@@ -82,6 +83,7 @@ func FLBPluginInit(plugin unsafe.Pointer) int {
 	return output.FLB_OK
 }
 
+//export FLBPluginFlushCtx
 func FLBPluginFlushCtx(ctx, data unsafe.Pointer, length C.int, tag *C.char) int {
 	dec := output.NewDecoder(data, int(length))
 
@@ -117,6 +119,7 @@ func FLBPluginFlushCtx(ctx, data unsafe.Pointer, length C.int, tag *C.char) int 
 	return output.FLB_OK
 }
 
+//export FLBPluginExit
 func FLBPluginExit() int {
 	writer.Close()
 
