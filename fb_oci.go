@@ -93,6 +93,7 @@ func FLBPluginFlushCtx(ctx, data unsafe.Pointer, length C.int, tag *C.char) int 
 			break
 		}
 
+		// Timestamp check, could be one of several types
 		var timestamp time.Time
 		switch t := ts.(type) {
 		case output.FLBTime:
@@ -100,7 +101,6 @@ func FLBPluginFlushCtx(ctx, data unsafe.Pointer, length C.int, tag *C.char) int 
 		case uint64:
 			timestamp = time.Unix(int64(t), 0)
 		default:
-			log.Println("time provided invalid, defaulting to now.")
 			timestamp = time.Now()
 		}
 
@@ -110,6 +110,7 @@ func FLBPluginFlushCtx(ctx, data unsafe.Pointer, length C.int, tag *C.char) int 
 			str += fmt.Sprintf("%s: %s\n", k, v)
 		}
 
+		// Send data to OCI writer
 		_, err := writer.Write([]byte(str))
 		if err != nil {
 			return output.FLB_ERROR
